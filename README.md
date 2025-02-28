@@ -1,8 +1,8 @@
-###Hieu Pham
+### Hieu Pham
 
 ### AMS595: Fundamentals of Computing
 
-###Group Project: Parallel Matrix multiplication
+### Group Project: Parallel Matrix multiplication
 
 
 
@@ -203,7 +203,7 @@ The speedup is calculated as:
 
 Below are the speedup curve for both methods:
 
-#####![Screenshot 2024-12-11 at 1.01.54 AM](/Users/phamquoctrung/Library/Application Support/typora-user-images/Screenshot 2024-12-11 at 1.01.54 AM.png)
+##### ![Screenshot 2024-12-11 at 1.01.54 AM](/Users/phamquoctrung/Library/Application Support/typora-user-images/Screenshot 2024-12-11 at 1.01.54 AM.png)
 
 The speedup curves for matrix multiplication highlight the benefits of parallelization over sequential execution. 
 
