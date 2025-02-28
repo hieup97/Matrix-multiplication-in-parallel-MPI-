@@ -2,193 +2,150 @@
 
 ### AMS595: Fundamentals of Computing
 
-### Group Project: Parallel Matrix multiplication
-
-
+### Group Project: Parallel Matrix Multiplication
 
 #### Introduction
 
-The program is implement the Fox and Ring method to emulate matrix multiplication in a parallel computing settings, using `C++` and `MPI`
+The program implements the Fox and Ring methods to emulate matrix multiplication in a parallel computing setting, using `C++` and `MPI`.
 
-Some prerequisites: given 2 matrices $A$ and $B$
+Some prerequisites: given two matrices $A$ and $B$:
 
-- Both number of processes and the matrix dimensions are of the power of 2
-  - We will be using $p=2^n$ processes $(n > 2)$
-  - Both matrices must be of $N\times N$ dimension ($N = 2^m, m > n $)
-- For simplicity of this program, we will randomize each element of both matrices such that $A_{ij}, B_{ij} \in (-1,1]$
+- Both the number of processes and the matrix dimensions are powers of 2.
+  - We will be using $p=2^n$ processes $(n > 2)$.
+  - Both matrices must be of $N\times N$ dimension ($N = 2^m, m > n$).
+- For simplicity, we will randomize each element of both matrices such that $A_{ij}, B_{ij} \in (-1,1]$.
 
+#### Running the Program
 
+The program can be run on the Seawulf supercomputer:
 
-#### Running the program
-
-The program can be run on Seawulf supercomputer
-
-- after loading the slurm module, the job script can be submitted by typing`make` into the terminal
-- `Ring()` and `Fox()` are called from `mat_mul.cpp` and should be run individually for execution time record 
-  - they are commented out by default
-
-- Any generated matrix/array can be printed using the `debug()` function
-- results are stored in `output.log`
-
-
+- After loading the Slurm module, the job script can be submitted by typing `make` into the terminal.
+- `Ring()` and `Fox()` are called from `mat_mul.cpp` and should be run individually for execution time records. They are commented out by default.
+- Any generated matrix/array can be printed using the `debug()` function.
+- Results are stored in `output.log`.
 
 #### Methods
 
-Given matrix $A=\begin{bmatrix}a_{11}&a_{12}&..&a_{1n}\\...\\a_{n1}&a_{n2}&..&a_{nn}\end{bmatrix}$ and $B=\begin{bmatrix}b_{11}&b_{12}&..&b_{1n}\\...\\b_{n1}&b_{n2}&..&b_{nn}\end{bmatrix}$
+Given matrices:
 
-Let $C=A\cdot B = \begin{bmatrix}c_{11}&c_{12}&..&c_{1n}\\...\\c_{n1}&c_{n2}&..&c_{nn}\end{bmatrix}$
+```math
+A = \begin{bmatrix}a_{11}&a_{12}&..&a_{1n}\\ ... \\ a_{n1}&a_{n2}&..&a_{nn}\end{bmatrix}
+```
 
+and
 
+```math
+B = \begin{bmatrix}b_{11}&b_{12}&..&b_{1n}\\ ... \\ b_{n1}&b_{n2}&..&b_{nn}\end{bmatrix}
+```
 
-##### Ring method 
+Let
 
-function: `void ring(const Matrix &A, const Matrix &B, Matrix &C);`
+```math
+C = A \cdot B = \begin{bmatrix}c_{11}&c_{12}&..&c_{1n}\\ ... \\ c_{n1}&c_{n2}&..&c_{nn}\end{bmatrix}
+```
 
-Given $p$ processes
+##### Ring Method
 
-At the $1^{st}$ step:
+Function:
 
-- For each process $p_i$
+```cpp
+void ring(const Matrix &A, const Matrix &B, Matrix &C);
+```
 
-  - `ring()` will have local vectors `localRowA` and `localColB` , in which 
+Given $p$ processes:
 
-    - `localRowA` = $\begin{bmatrix}a_{i1}&a_{i2}&..&a_{in}\end{bmatrix}$ , taking the $i^{th}$ row of $A$
-    - `localColB` = $\begin{bmatrix}b_{1i}\\b_{2i}\\..\\a_{ni}\end{bmatrix}$ ,  taking the $i^{th}$ column of $B$, which will be represented by a transposed vector in the  program
+At the first step:
 
-    
+- For each process $p_i$:
+  - `ring()` will have local vectors `localRowA` and `localColB`, where:
+    - `localRowA` = `[a_{i1}, a_{i2}, ..., a_{in}]`, taking the $i^{th}$ row of $A$.
+    - `localColB` = `[b_{1i}, b_{2i}, ..., b_{ni}]^T`, taking the $i^{th}$ column of $B$ (represented as a transposed vector).
+  - $c_{ii} =$ `localRowA` $\cdot$ `localColB`, where $i = 1,2,...p$.
 
-  -  $c_{ii} =$ `localRowA` $\cdot$ `localColB`  , in which $i = 1,2,...p$
+Once all processes are done:
 
-- Once all processes are done
+```math
+C = \begin{bmatrix}c_{11}&0&0&...&0&...\\ 0&c_{22}&0&...&0&...\\ ...\\ 0&0&0&...&c_{pp}&...\\ ...\end{bmatrix}
+```
 
-  - $C$ = $\begin{bmatrix}c_{11}&0&0&...&0&...\\
-    0&c_{22}&0&...&0&...\\...\\0&0&0&...&c_{pp}&...\\...\end{bmatrix}$ 
-  -  $C$ can collated from all processes's resulting matrix using `MPI_Allreduce()`
+$C$ can be collated from all processes using `MPI_Allreduce()`.
 
 For the next $k$ steps $(k<n)$:
 
-- For each process $p_i$, 
-  - `localRowA`  will row down and take  the $(i+k)^{th}$ row of $A$ 
-  - `localColB` will retain the $i^{th}$ column of $B$, 
-  -  $c_{(i+k)i} =$ `localRowA` $\cdot$ `localColB`
-    - if $i+k>n$ and $k < n-1$, we can make it so that `localRowA`  will roll back to $1^{st}$ row instead of going out of bound
-- For illustration, at the $2^{nd}$ step ($k=1$):
-  - $C$ = $\begin{bmatrix}c_{11}&0&0&...&0&...\\
-    c_{12}&c_{22}&0&...&0&...\\0&c_{32}&c_{33}&...&0&...\\...\\0&0&0&...&c_{pp}&...\\0&0&0&...&c_{(p+1)p}&...\\...\end{bmatrix}$ 
+- Each process $p_i$:
+  - `localRowA` shifts down to the $(i+k)^{th}$ row of $A$.
+  - `localColB` retains the $i^{th}$ column of $B$.
+  - $c_{(i+k)i} =$ `localRowA` $\cdot$ `localColB$.
 
-- Each process is done when it has finished taking $n$ steps in total ($k=n-1$)
-  - The resulting matrix $C$ after $n$ steps : 
-    - $C$ = $\begin{bmatrix}c_{11}&c_{12}&c_{13}&...&c_{1p}&...\\
-      c_{12}&c_{22}&c_{23}&...&c_{2p}&...\\...\\c_{p1}&c_{p2}&c_{p3}&...&c_{pp}&...\\...\\c_{n1}&c_{n2}&c_{n3}&...&c_{np}&...\end{bmatrix}$ 
+If $i+k>n$ and $k < n-1$, `localRowA` rolls back to the first row instead of going out of bounds.
 
+The process completes when each process has taken $n$ steps in total ($k=n-1$).
 
+##### Fox (BMR) Method
 
-Let call the $n$-step process above **Q**
+Function:
 
-If $p < n$ (which is a given in most situations), we will repeat **Q** for $\frac{n}{p}$ times
+```cpp
+void fox(const Matrix &A, const Matrix &B, Matrix &C);
+```
 
-For each iteration $j$ ($j = 0,1,..,\frac{n}{p} -1$)
+$A$ and $B$ are flattened into one-dimensional vectors `flatA` and `flatB` to reduce communication time:
 
-- `localColB` will take the $(i+j\times p)^{th}$ column of $B$, 
-- → **Q** will populate $C$ from the  $(jp+1)^{th}$ column to  $((j+1)p)^{th}$ column 
+```math
+flatA = [a_{11}, a_{12}, ..., a_{1n}, a_{21}, ..., a_{nn}]
+```
 
-$C$ will be fully populated once the loop is complete
-
-
-
-##### Fox (BMR) method 
-
-function: `void fox(const Matrix &A, const Matrix &B, Matrix &C);`
-
-$A$ and $B$ will be flatten into one-dimentional vector `flatA` and `flatB` to reduce communication time between processes
-
-- `flatA` = $\begin{bmatrix}a_{11}&a_{12}&...&a_{1n}&a_{21}&...&a_{nn}\end{bmatrix}$ 
-- `flatB` = $\begin{bmatrix}b_{11}&b_{12}&...&b_{1n}&b_{21}&...&b_{nn}\end{bmatrix}$ 
+```math
+flatB = [b_{11}, b_{12}, ..., b_{1n}, b_{21}, ..., b_{nn}]
+```
 
 The BMR method divides each matrix into blocks assigned to each process. Each process:
 
-- Holds a block of $A$ (called `localA`) and a block of $B$(called `localB`).
-- Part of the product matrix $C$ `localC` will be computed based on those blocks
+- Holds a block of $A$ (`localA`) and a block of $B` (`localB`).
+- Computes a part of the product matrix `C` (`localC`).
 
-Given $p$ processes
+Each process performs:
 
-For each process $p_i$:
+1. **Broadcast:** Receives a row block of $A$ and $B$.
+2. **Multiply:** Computes the multiplication of the received blocks.
+3. **Roll:** Sends its `localB` block to $p_{i+1}$ and receives `localB` from $p_{i-1}$.
+4. Repeat until every process has multiplied all relevant blocks.
 
-- **Broadcast**:  receives a row block of  $A$ and $B$, broadcasted by the root $p_1$
+#### Results
 
-  - Each process will handle a block of rows of matrix $A$ and a block of rows of matrix $B$ . `blockSize` is computed based on the number of rows each process will handle (`n / size`).
-
-  - Using `MPI_Scatter`, each process receives a portion of $A$ and $B$ to work on.
-
-- **Multiply**:  $p_i$ performs matrix multiplication between the broadcasted row block from `A` and its own `B` block.
-  - The computation result is stored in `localC`, which accumulates partial results for each process.
-
-- **Roll**: $p_i$ sends its `localB` block to  $p_{i+1} $ and receives the `localB` block from $p_{i+1}$.
-  - The `MPI_Sendrecv_replace` function is used to "roll" the blocks of `B` in a circular fashion among the processes.
-
-Then the abovementioned process will repeat until each process has multiplied its `A` block with every row block of `B` $p$ times
-
-
-
-#### Result
-
-We test the matrix multiplication given these specifications
+We test matrix multiplication under these specifications:
 
 - $p=2^2, 2^4, 2^6$
 - $N=2^8, 2^{10}, 2^{12}$
 
-Belows are the results after running the program
+Results:
 
-- **Sequential**
+**Sequential:**
 
-  - For $2^8$ dimensions, time elapsed during the job: 0.03716s.
-  
-  
-    - For $2^{10}$ dimensions, time elapsed during the job: 3.40246s.
-  
-  
-    - For $2^{12}$ dimensions, time elapsed during the job: 795.83825s.
-  
+- $2^8$: 0.03716s
+- $2^{10}$: 3.40246s
+- $2^{12}$: 795.83825s
 
+**Fox Method:**
 
-- **Fox Method**
+- $2^2, 2^8$: 0.00529s
+- $2^2, 2^{10}$: 0.33534s
+- $2^2, 2^{12}$: 30.33475s
+- $2^4, 2^8$: 0.00317s
+- $2^4, 2^{10}$: 0.08171s
+- $2^4, 2^{12}$: 8.02823s
+- $2^6, 2^8$: 0.00327s
+- $2^6, 2^{10}$: 0.03893s
+- $2^6, 2^{12}$: 1.69635s
 
-  - For $2^2$ processes and $2^8$ dimensions, time elapsed during the job: 0.00529s.
+**Ring Method:**
 
-  - For $2^2$ processes and $2^{10}$ dimensions, time elapsed during the job: 0.33534s.
-
-  -  For $2^2$ processes and $2^{12}$ dimensions, time elapsed during the job: 30.33475s.
-
-  - For $2^4$ processes and $2^8$ dimensions, time elapsed during the job: 0.00317s.
-
-  - For $2^4$ processes and $2^{10}$ dimensions, time elapsed during the job: 0.08171s.
-
-  - For $2^4$ processes and $2^{12}$ dimensions, time elapsed during the job: 8.02823s.
-
-  - For $2^6$ processes and $2^8$ dimensions, time elapsed during the job: 0.00327s.
-
-  - For $2^6$ processes and $2^{10}$ dimensions, time elapsed during the job: 0.03893s.
-
-  - For $2^6$ processes and $2^{12}$ dimensions, time elapsed during the job: 1.69635s.
-
-
-- **Ring Method**
-
-  - For $2^2$ processes and $2^8$ dimensions, time elapsed during the job: 0.01618s.
-
-  - For $2^2$ processes and $2^{10}$ dimensions, time elapsed during the job: 1.03047s.
-
-  - For $2^2$ processes and $2^{12}$ dimensions, time elapsed during the job: 89.33743s
-
-  - For $2^4$ processes and $2^8$ dimensions, time elapsed during the job: 0.02655s.
-
-  - For $2^4$ processes and $2^{10}$ dimensions, time elapsed during the job: 0.88076s.
-
-  - For $2^4$ processes and $2^{12}$ dimensions, time elapsed during the job: 72.43762s.
-
-  - For $2^6$ processes and $2^8$ dimensions, time elapsed during the job: 0.04764s.
-
-  - For $2^6$ processes and $2^{10}$ dimensions, time elapsed during the job: 0.84287s.
-
-  - For $2^6$ processes and $2^{12}$ dimensions, time elapsed during the job: 59.85964s.
-
+- $2^2, 2^8$: 0.01618s
+- $2^2, 2^{10}$: 1.03047s
+- $2^2, 2^{12}$: 89.33743s
+- $2^4, 2^8$: 0.02655s
+- $2^4, 2^{10}$: 0.88076s
+- $2^4, 2^{12}$: 72.43762s
+- $2^6, 2^8$: 0.04764s
+- $2^6, 2^{10}$: 0.84287s
+- $2^6, 2^{12}$: 59.85964s
