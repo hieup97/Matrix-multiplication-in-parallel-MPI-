@@ -1,8 +1,6 @@
 ### Hieu Pham
 
-### AMS595: Fundamentals of Computing
-
-### Group Project: Parallel Matrix Multiplication
+### Parallel Matrix Multiplication
 
 #### Introduction
 
@@ -17,7 +15,7 @@ Some prerequisites: given two matrices $A$ and $B$:
 
 #### Running the Program
 
-The program can be run on the Seawulf supercomputer:
+The program was tested and run on the Seawulf supercomputer:
 
 - After loading the Slurm module, the job script can be submitted by typing `make` into the terminal.
 - `Ring()` and `Fox()` are called from `mat_mul.cpp` and should be run individually for execution time records. They are commented out by default.
