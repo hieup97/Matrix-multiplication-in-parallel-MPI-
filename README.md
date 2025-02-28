@@ -73,13 +73,13 @@ For the next $k$ steps $(k<n)$:
   -  $c_{(i+k)i} =$ `localRowA` $\cdot$ `localColB`
     - if $i+k>n$ and $k < n-1$, we can make it so that `localRowA`  will roll back to $1^{st}$ row instead of going out of bound
 - For illustration, at the $2^{nd}$ step ($k=1$):
-  - $C$ = $\begin{bmatrix}c_{11}&0&0&...&0&...\\
-    c_{12}&c_{22}&0&...&0&...\\0&c_{32}&c_{33}&...&0&...\\...\\0&0&0&...&c_{pp}&...\\0&0&0&...&c_{(p+1)p}&...\\...\end{bmatrix}$ 
+  - $C$ = $\begin{Bmatrix}c_{11}&0&0&...&0&...\\
+    c_{12}&c_{22}&0&...&0&...\\0&c_{32}&c_{33}&...&0&...\\...\\0&0&0&...&c_{pp}&...\\0&0&0&...&c_{(p+1)p}&...\\...\end{Bmatrix}$ 
 
 - Each process is done when it has finished taking $n$ steps in total ($k=n-1$)
   - The resulting matrix $C$ after $n$ steps : 
-    - $C$ = $\begin{bmatrix}c_{11}&c_{12}&c_{13}&...&c_{1p}&...\\
-      c_{12}&c_{22}&c_{23}&...&c_{2p}&...\\...\\c_{p1}&c_{p2}&c_{p3}&...&c_{pp}&...\\...\\c_{n1}&c_{n2}&c_{n3}&...&c_{np}&...\end{bmatrix}$ 
+    - $C$ = $\begin{Bmatrix}c_{11}&c_{12}&c_{13}&...&c_{1p}&...\\
+      c_{12}&c_{22}&c_{23}&...&c_{2p}&...\\...\\c_{p1}&c_{p2}&c_{p3}&...&c_{pp}&...\\...\\c_{n1}&c_{n2}&c_{n3}&...&c_{np}&...\end{Bmatrix}$ 
 
 
 
@@ -102,8 +102,8 @@ function: `void fox(const Matrix &A, const Matrix &B, Matrix &C);`
 
 $A$ and $B$ will be flatten into one-dimentional vector `flatA` and `flatB` to reduce communication time between processes
 
-- `flatA` = $\begin{bmatrix}a_{11}&a_{12}&...&a_{1n}&a_{21}&...&a_{nn}\end{bmatrix}$ 
-- `flatB` = $\begin{bmatrix}b_{11}&b_{12}&...&b_{1n}&b_{21}&...&b_{nn}\end{bmatrix}$ 
+- `flatA` = $\begin{Bmatrix}a_{11}&a_{12}&...&a_{1n}&a_{21}&...&a_{nn}\end{Bmatrix}$ 
+- `flatB` = $\begin{Bmatrix}b_{11}&b_{12}&...&b_{1n}&b_{21}&...&b_{nn}\end{Bmatrix}$ 
 
 The BMR method divides each matrix into blocks assigned to each process. Each process:
 
@@ -192,25 +192,3 @@ Belows are the results after running the program
 
   - For $2^6$ processes and $2^{12}$ dimensions, time elapsed during the job: 59.85964s.
 
-
-
-
-#### Analysis
-
-The speedup is calculated as:
-
-​		 $\text{Speedup} = \frac{\text{Sequential Time}}{\text{Parallel time}} $
-
-Below are the speedup curve for both methods:
-
-##### ![Screenshot 2024-12-11 at 1.01.54 AM](/Users/phamquoctrung/Library/Application Support/typora-user-images/Screenshot 2024-12-11 at 1.01.54 AM.png)
-
-The speedup curves for matrix multiplication highlight the benefits of parallelization over sequential execution. 
-
-- Sequential processing time increases exponentially with matrix size, making parallel approaches essential for large matrices.
-
-**Fox Method** demonstrates superior scalability and efficiency, achieving significant speedups, especially for larger dimensions (e.g., $2^{12}$). It effectively balances computation and communication, making it ideal for dense matrix multiplication with high process counts. 
-
-Conversely, **Ring Method** exhibits slower speedups due to higher communication overhead, particularly with smaller matrices or higher process counts. While it performs reasonably well for large matrices, it lags behind the Fox Method in efficiency.
-
-In summary, the Fox Method is better suited for matrix multiplication, especially for large matrices and high process counts, while the Ring Method is less efficient due to its communication-heavy design. For smaller matrices, both methods offer limited speedup due to communication overhead.
